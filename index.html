@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aplikasi Pesan Profesional</title>
+    <style>
+        :root {
+            --primary: #1e293b;
+            --accent: #2563eb;
+            --accent-hover: #1d4ed8;
+            --success: #16a34a;
+            --danger: #dc2626;
+            --bg-light: #f8fafc;
+            --text-main: #334155;
+            --text-muted: #64748b;
+            --border: #cbd5e1;
+        }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #0f172a; margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; }
+        .card { background: white; width: 100%; max-width: 400px; height: 90vh; border-radius: 16px; display: flex; flex-direction: column; overflow: hidden; position: relative; box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
+        .header { background: var(--primary); color: white; padding: 16px; text-align: center; font-weight: 600; display: flex; justify-content: space-between; align-items: center; }
+        .screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-light); display: flex; flex-direction: column; padding: 25px 20px; box-sizing: border-box; overflow-y: auto; z-index: 10; }
+        .screen h2 { color: var(--primary); margin-bottom: 6px; font-size: 22px; }
+        .screen p { color: var(--text-muted); font-size: 13px; margin-bottom: 15px; text-align: center; }
+        .screen input { width: 100%; padding: 11px 14px; margin-bottom: 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; outline: none; box-sizing: border-box; }
+        .screen button { padding: 11px 16px; background: var(--accent); color: white; border: none; border-radius: 8px; font-size: 14px; cursor: pointer; width: 100%; font-weight: 600; margin-top: 4px; }
+        .screen button.secondary { background: var(--primary); }
+        .screen button.danger { background: var(--danger); margin-top: 15px; }
+        .list-section { width: 100%; margin-top: 12px; text-align: left; }
+        .list-section h4 { font-size: 12px; color: var(--text-muted); margin-bottom: 6px; text-transform: uppercase; }
+        .scroll-list { max-height: 120px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; width: 100%; }
+        .list-item { background: white; padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; color: var(--primary); display: flex; justify-content: space-between; align-items: center; }
+        .request-card { background: white; border: 1px solid #f59e0b; border-left: 4px solid #f59e0b; padding: 10px; border-radius: 6px; margin-bottom: 8px; font-size: 13px; }
+        .request-card .req-name { font-weight: 700; color: var(--primary); margin-bottom: 6px; display: block; }
+        .req-btn-group { display: flex; gap: 6px; }
+        .req-btn-group button { padding: 6px 10px; font-size: 12px; margin: 0; border-radius: 4px; }
+        .btn-accept { background: var(--success); color: white; border: none; cursor: pointer; }
+        .btn-reject { background: var(--danger); color: white; border: none; cursor: pointer; }
+        .chat-box { flex: 1; padding: 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; background: #f1f5f9; }
+        .message { max-width: 75%; padding: 10px 14px; border-radius: 10px; font-size: 14px; word-wrap: break-word; }
+        .message.incoming { background: white; color: var(--text-main); align-self: flex-start; }
+        .message.outgoing { background: var(--accent); color: white; align-self: flex-end; }
+        .input-box { display: flex; padding: 12px; background: white; border-top: 1px solid var(--border); }
+        .input-box input { flex: 1; padding: 10px 14px; border: 1px solid var(--border); border-radius: 6px; outline: none; font-size: 14px; }
+        .input-box button { background: var(--accent); color: white; border: none; padding: 0 18px; margin-left: 8px; border-radius: 6px; cursor: pointer; font-weight: 600; }
+        .back-btn { background: none; border: none; color: white; cursor: pointer; font-size: 14px; }
+    </style>
+
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+</head>
+<body>
+
+    <div class="card">
+        <!-- 1. LOGIN SCREEN -->
+        <div id="login-screen" class="screen">
+            <h2>Autentikasi Pengguna</h2>
+            <p>Masukkan identitas akun Anda</p>
+            <input type="text" id="nickname-input" placeholder="Masukkan Nickname">
+            <input type="password" id="password-input" placeholder="Masukkan Password">
+            <button id="login-btn" type="button">Masuk Sistem</button>
+        </div>
+
+        <!-- 2. MENU SCREEN -->
+        <div id="menu-screen" class="screen" style="display: none;">
+            <h2>Menu Utama</h2>
+            <p id="welcome-text">Selamat datang!</p>
+            
+            <button class="secondary" id="public-chat-btn" type="button">🌐 Masuk Ruang Publik</button>
+            
+            <div style="width: 100%; border-top: 1px solid var(--border); margin: 12px 0;"></div>
+            
+            <p style="margin-bottom: 4px; font-size: 12px; font-weight: 600;">Cari / Kirim Pesan ke Orang Baru:</p>
+            <input type="text" id="friend-input" placeholder="Nickname Tujuan">
+            <button id="send-req-btn" type="button">Kirim Pesan / Request</button>
+
+            <div class="list-section">
+                <h4>Permintaan Chat Masuk:</h4>
+                <div id="request-list" class="scroll-list">
+                    <p style="color: var(--text-muted); font-size: 12px; font-style: italic;">Tidak ada permintaan baru.</p>
+                </div>
+            </div>
+
+            <div class="list-section">
+                <h4>Riwayat Teman Disimpan:</h4>
+                <div id="friend-list" class="scroll-list">
+                    <p style="color: var(--text-muted); font-size: 12px; font-style: italic;">Belum ada teman tersimpan.</p>
+                </div>
+            </div>
+
+            <button class="danger" id="logout-btn" type="button">Keluar (Log Out)</button>
+        </div>
+
+        <!-- 3. CHAT SCREEN -->
+        <div id="chat-screen" style="display: none; display: flex; flex-direction: column; height: 100%;">
+            <div class="header">
+                <button class="back-btn" id="back-menu-btn" type="button">← Menu</button>
+                <span id="chat-title">Ruang Pesan</span>
+                <span style="width: 40px;"></span>
+            </div>
+            <div class="chat-box" id="chat-messages"></div>
+
+            <div class="input-box">
+                <input type="text" id="message-input" placeholder="Tulis pesan...">
+                <button id="send-btn" type="button">Kirim</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Memastikan DOM siap sepenuhnya sebelum event dipasang
+        document.addEventListener("DOMContentLoaded", function() {
+            const firebaseConfig = {
+                apiKey: "AIzaSyBBjJcXQJDfI4kewcbwpx6RnIj6jPRE8",
+                authDomain: "chating-apk-97df6.firebaseapp.com",
+                databaseURL: "https://chating-apk-97df6-default-rtdb.firebaseio.com",
+                projectId: "chating-apk-97df6",
+                storageBucket: "chating-apk-97df6.firebasestorage.app",
+                messagingSenderId: "198389015055",
+                appId: "1:198389015055:web:e5727c616cb3f3653ab97a"
+            };
+
+            if (!firebase.apps.length) {
+                firebase.initializeApp(firebaseConfig);
+            }
+            const db = firebase.database();
+
+            let myNickname = "";
+            let currentChatRoom = "";
+
+            document.getElementById("login-btn").onclick = async function() {
+                const nickname = document.getElementById("nickname-input").value.trim();
+                const password = document.getElementById("password-input").value.trim();
+
+                if (!nickname || !password) {
+                    alert("Nickname dan Password wajib diisi!");
+                    return;
+                }
+
+                try {
+                    const userRef = db.ref('users/' + nickname);
+                    const snapshot = await userRef.once('value');
+
+                    if (snapshot.exists()) {
+                        if (snapshot.val().password !== password) {
+                            alert("Password salah!");
+                            return;
+                        }
+                    } else {
+                        await userRef.set({ password: password });
+                    }
+
+                    myNickname = nickname;
+                    document.getElementById("welcome-text").innerText = `Selamat datang, ${myNickname}!`;
+                    document.getElementById("login-screen").style.display = "none";
+                    document.getElementById("menu-screen").style.display = "flex";
+                    loadUserData();
+                } catch (err) {
+                    alert("Error: " + err.message);
+                }
+            };
+
+            document.getElementById("logout-btn").onclick = function() {
+                myNickname = "";
+                document.getElementById("nickname-input").value = "";
+                document.getElementById("password-input").value = "";
+                document.getElementById("menu-screen").style.display = "none";
+                document.getElementById("login-screen").style.display = "flex";
+            };
+
+            document.getElementById("public-chat-btn").onclick = function() {
+                currentChatRoom = "public_chat";
+                document.getElementById("chat-title").innerText = "Ruang Publik";
+                switchToChatScreen();
+            };
+
+            document.getElementById("send-req-btn").onclick = async function() {
+                const targetUser = document.getElementById("friend-input").value.trim();
+                if (!targetUser) {
+                    alert("Masukkan nickname tujuan!");
+                    return;
+                }
+                if (targetUser === myNickname) {
+                    alert("Tidak bisa ke diri sendiri!");
+                    return;
+                }
+
+                const targetSnap = await db.ref('users/' + targetUser).once('value');
+                if (!targetSnap.exists()) {
+                    alert("Pengguna tidak ditemukan!");
+                    return;
+                }
+
+                await db.ref(`users/${targetUser}/requests/${myNickname}`).set(true);
+                await db.ref(`users/${myNickname}/friends/${targetUser}`).set(true);
+
+                alert(`Permintaan terkirim ke ${targetUser}!`);
+                document.getElementById("friend-input").value = "";
+                openPrivateChat(targetUser);
+            };
+
+            function openPrivateChat(friendName) {
+                const sortedUsers = [myNickname, friendName].sort();
+                currentChatRoom = `private_${sortedUsers[0]}_${sortedUsers[1]}`;
+                document.getElementById("chat-title").innerText = `Privat: ${friendName}`;
+                switchToChatScreen();
+            }
+
+            function loadUserData() {
+                const friendListDiv = document.getElementById("friend-list");
+                const requestListDiv = document.getElementById("request-list");
+
+                db.ref(`users/${myNickname}/friends`).on('value', (snapshot) => {
+                    friendListDiv.innerHTML = "";
+                    if (snapshot.exists()) {
+                        Object.keys(snapshot.val()).forEach((friendName) => {
+                            const item = document.createElement("div");
+                            item.className = "list-item";
+                            item.innerHTML = `<span>💬 ${friendName}</span> <span>➡️</span>`;
+                            item.onclick = () => openPrivateChat(friendName);
+                            friendListDiv.appendChild(item);
+                        });
+                    } else {
+                        friendListDiv.innerHTML = `<p style="color: var(--text-muted); font-size: 12px; font-style: italic;">Belum ada teman tersimpan.</p>`;
+                    }
+                });
+
+                db.ref(`users/${myNickname}/requests`).on('value', (snapshot) => {
+                    requestListDiv.innerHTML = "";
+                    if (snapshot.exists()) {
+                        Object.keys(snapshot.val()).forEach((senderName) => {
+                            const card = document.createElement("div");
+                            card.className = "request-card";
+                            card.innerHTML = `
+                                <span class="req-name">📩 ${senderName} ingin mengirim pesan</span>
+                                <div class="req-btn-group">
+                                    <button class="btn-accept" id="acc-${senderName}">Terima</button>
+                                    <button class="btn-reject" id="rej-${senderName}">Tolak</button>
+                                </div>
+                            `;
+                            requestListDiv.appendChild(card);
+
+                            setTimeout(() => {
+                                const acc = document.getElementById(`acc-${senderName}`);
+                                const rej = document.getElementById(`rej-${senderName}`);
+                                if (acc) {
+                                    acc.onclick = async () => {
+                                        await db.ref(`users/${myNickname}/friends/${senderName}`).set(true);
+                                        await db.ref(`users/${myNickname}/requests/${senderName}`).remove();
+                                        openPrivateChat(senderName);
+                                    };
+                                }
+                                if (rej) {
+                                    rej.onclick = async () => {
+                                        await db.ref(`users/${myNickname}/requests/${senderName}`).remove();
+                                    };
+                                }
+                            }, 50);
+                        });
+                    } else {
+                        requestListDiv.innerHTML = `<p style="color: var(--text-muted); font-size: 12px; font-style: italic;">Tidak ada permintaan baru.</p>`;
+                    }
+                });
+            }
+
+            function switchToChatScreen() {
+                document.getElementById("menu-screen").style.display = "none";
+                document.getElementById("chat-screen").style.display = "flex";
+                loadMessages(currentChatRoom);
+            }
+
+            document.getElementById("back-menu-btn").onclick = function() {
+                db.ref().off();
+                document.getElementById("chat-screen").style.display = "none";
+                document.getElementById("menu-screen").style.display = "flex";
+                loadUserData();
+            };
+
+            document.getElementById("send-btn").onclick = sendMessage;
+            document.getElementById("message-input").onkeypress = function(e) {
+                if (e.key === 'Enter') sendMessage();
+            };
+
+            function sendMessage() {
+                const msgInput = document.getElementById("message-input");
+                const text = msgInput.value.trim();
+                if (!text) return;
+
+                db.ref(`rooms/${currentChatRoom}/messages`).push({
+                    sender: myNickname,
+                    message: text,
+                    timestamp: Date.now()
+                });
+                msgInput.value = "";
+            }
+
+            function loadMessages(roomName) {
+                const chatBox = document.getElementById("chat-messages");
+                db.ref(`rooms/${roomName}/messages`).on('value', (snapshot) => {
+                    chatBox.innerHTML = "";
+                    if (snapshot.exists()) {
+                        Object.values(snapshot.val()).forEach((msg) => {
+                            const isMyMessage = msg.sender === myNickname;
+                            const div = document.createElement("div");
+                            div.className = `message ${isMyMessage ? 'outgoing' : 'incoming'}`;
+                            div.innerHTML = `
+                                <div style="font-size: 10px; font-weight: bold; margin-bottom: 2px;">${msg.sender}</div>
+                                <div>${msg.message}</div>
+                            `;
+                            chatBox.appendChild(div);
+                        });
+                        chatBox.scrollTop = chatBox.scrollHeight;
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html>
