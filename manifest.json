@@ -1,12 +1,19 @@
 {
-  "background_color": "#838383",
-  "dir": "ltr",
-  "display": "standalone",
-  "name": "Ccx",
-  "orientation": "any",
-  "scope": "/",
-  "short_name": "Ccx",
-  "start_url": "/",
-  "theme_color": "#c31111",
-  "description": "Aplikasi untuk chat"
+    "background_color": "#838383",
+    "dir": "ltr",
+    "display": "standalone",
+    "name": "Ccx",
+    "orientation": "any",
+    "scope": "/",
+    "short_name": "Ccx",
+    "start_url": "/",
+    "theme_color": "#c31111",
+    "description": "Aplikasi untuk chat",
+    "icons": [
+        {
+            "src": "20260610_104842_0000.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        }
+    ]
 }
